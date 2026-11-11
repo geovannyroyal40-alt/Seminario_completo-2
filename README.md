@@ -5,8 +5,9 @@ Plataforma académica de análisis económico y competitividad municipal.
 **Autores:** Camila Guerrero · Geovanny Betancourt
 
 ## Contenido
-- Estadística descriptiva completa
-- Gráficos: barras, pastel, radar y vista 3D
+- Mapas coropléticos 2D (Colombia departamentos) con selector de variable
+- Visualización 3D de competitividad municipal
+- Estadística descriptiva + gráficos (barras, pastel, radar)
 - Matriz de correlaciones y modelo OLS
 - Modelos predictivos (proyección 2030)
 - Asistente temático
