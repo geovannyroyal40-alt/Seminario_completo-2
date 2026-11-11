@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observatorio Regional de Nariño | Pobreza, valor agregado e inversión municipal</title>
+  <meta name="description" content="Observatorio académico de los 64 municipios de Nariño: pobreza multidimensional, valor agregado, inversión municipal, mapas coropléticos, econometría y asistente. Camila Guerrero y Geovanny Betancourt." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script>
+    tailwind.config = { theme: { extend: {
+      colors: { ink: '#0c0c0e', panel: '#141416', line: '#27272a', gold: '#c9a227', soft: '#a1a1aa' },
+      fontFamily: { serif: ['Georgia', 'Cambria', 'Times New Roman', 'serif'], sans: ['Inter', 'system-ui', 'sans-serif'] }
+    } } }
+  </script>
+  <style>
+    #mapa { height: 560px; background: #0c0c0e; border-radius: 0.75rem; }
+    .leaflet-container { font-family: inherit; }
+    .leaflet-tooltip.tip { background: #141416; color: #e4e4e7; border: 1px solid #3f3f46; box-shadow: none; font-size: 12px; }
+    .leaflet-tooltip.tip::before { display: none; }
+    .leaflet-control-attribution { background: rgba(12,12,14,.7) !important; color: #71717a !important; }
+    .leaflet-control-attribution a { color: #a1a1aa !important; }
+    code { background: #1c1c1f; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+    .scroll-y { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
+    summary { list-style: none; } summary::-webkit-details-marker { display: none; }
+    summary::after { content: ' ▾'; } details[open] summary::after { content: ' ▴'; }
+  </style>
+</head>
+<body class="bg-ink text-gray-200 font-sans antialiased">
+
+  <!-- CABECERA Y PESTAÑAS -->
+  <header class="border-b border-line bg-ink/95 backdrop-blur sticky top-0 z-[1000]">
+    <div class="max-w-6xl mx-auto px-5 pt-3 flex items-center gap-3">
+      <div class="w-8 h-8 rounded bg-gold flex items-center justify-center shrink-0"><i class="fas fa-university text-ink text-sm"></i></div>
+      <div>
+        <p class="font-semibold text-sm tracking-wide">Observatorio Regional de Nariño</p>
+        <p class="text-[10px] text-soft uppercase tracking-widest">Pobreza · Valor agregado · Inversión municipal</p>
+      </div>
+    </div>
+    <nav class="max-w-6xl mx-auto px-5 mt-2 flex gap-1 overflow-x-auto text-sm text-soft" aria-label="Secciones">
+      <a href="#presentacion" data-tab="presentacion" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Presentación</a>
+      <a href="#indicadores" data-tab="indicadores" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Indicadores</a>
+      <a href="#mapas" data-tab="mapas" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Mapas</a>
+      <a href="#econometria" data-tab="econometria" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Econometría</a>
+      <a href="#proyeccion" data-tab="proyeccion" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Proyección</a>
+      <a href="#asistente" data-tab="asistente" class="px-3 py-2.5 border-b-2 border-transparent hover:text-gold whitespace-nowrap">Asistente</a>
+    </nav>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-5">
+    <div id="estadoDatos" class="hidden mt-5 text-sm border border-gold/40 bg-gold/10 text-amber-200 rounded-xl px-4 py-3"></div>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-5 pb-16">
+
+    <!-- ============ PRESENTACIÓN ============ -->
+    <section id="presentacion" class="tab-panel">
+      <div class="py-16 md:py-20 text-center border-b border-line">
+        <p class="text-gold text-xs font-medium tracking-[0.25em] uppercase mb-5">Departamento de Nariño · Colombia</p>
+        <h1 class="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">Observatorio Regional<br>de Nariño</h1>
+        <p class="text-soft text-lg max-w-2xl mx-auto leading-relaxed mb-10">
+          Plataforma académica de análisis económico territorial para los 64 municipios del departamento:
+          pobreza, valor agregado e inversión municipal, con mapas, econometría aplicada y un asistente de consulta.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a href="#mapas" data-tab="mapas" class="px-6 py-3 bg-gold text-ink font-semibold rounded-lg hover:bg-amber-400 transition text-sm">Ver mapas</a>
+          <a href="#indicadores" data-tab="indicadores" class="px-6 py-3 border border-line rounded-lg hover:border-gold/50 transition text-sm">Explorar indicadores</a>
+        </div>
+      </div>
+
+      <div class="py-14 border-b border-line">
+        <h2 class="font-serif text-2xl md:text-3xl text-center text-white mb-3">Quiénes somos</h2>
+        <p class="text-center text-soft text-sm mb-10">Desarrollo académico y técnico del Observatorio</p>
+        <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <div class="bg-panel border border-line rounded-2xl p-8 text-center">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-amber-700 mx-auto mb-5 flex items-center justify-center text-ink text-2xl font-bold">CG</div>
+            <h3 class="text-lg font-semibold text-white">Camila Guerrero</h3>
+            <p class="text-gold text-xs mt-1 tracking-wide">Análisis de Datos · Interfaz</p>
+            <p class="text-soft text-sm mt-4 leading-relaxed">Diseño de indicadores, estadística descriptiva y experiencia de usuario de la plataforma.</p>
+          </div>
+          <div class="bg-panel border border-line rounded-2xl p-8 text-center">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-slate-500 to-slate-800 mx-auto mb-5 flex items-center justify-center text-white text-2xl font-bold">GB</div>
+            <h3 class="text-lg font-semibold text-white">Geovanny Betancourt</h3>
+            <p class="text-slate-400 text-xs mt-1 tracking-wide">Econometría · Modelos Predictivos</p>
+            <p class="text-soft text-sm mt-4 leading-relaxed">Especificación econométrica, calibración de modelos y proyecciones de largo plazo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="py-14 border-b border-line">
+        <h2 class="font-serif text-2xl md:text-3xl text-center text-white mb-3">Qué encuentras en la página</h2>
+        <p class="text-center text-soft text-sm mb-10">Cinco secciones sobre la misma base municipal</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <a href="#indicadores" data-tab="indicadores" class="bg-panel border border-line rounded-2xl p-6 hover:border-gold/50 transition block">
+            <i class="fas fa-table-list text-gold"></i><h3 class="text-white font-semibold mt-3">Indicadores</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">Resumen estadístico, ranking y tabla completa de pobreza, valor agregado e inversión para los 64 municipios.</p></a>
+          <a href="#mapas" data-tab="mapas" class="bg-panel border border-line rounded-2xl p-6 hover:border-gold/50 transition block">
+            <i class="fas fa-map text-gold"></i><h3 class="text-white font-semibold mt-3">Mapas coropléticos</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">Valor agregado municipal, participación en el valor agregado del departamento, inversión municipal y pobreza, con ficha por municipio.</p></a>
+          <a href="#econometria" data-tab="econometria" class="bg-panel border border-line rounded-2xl p-6 hover:border-gold/50 transition block">
+            <i class="fas fa-square-root-variable text-gold"></i><h3 class="text-white font-semibold mt-3">Econometría</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">Matriz de correlaciones de Pearson, diagrama de dispersión y un modelo OLS estimado en la página con los datos cargados.</p></a>
+          <a href="#proyeccion" data-tab="proyeccion" class="bg-panel border border-line rounded-2xl p-6 hover:border-gold/50 transition block">
+            <i class="fas fa-chart-line text-gold"></i><h3 class="text-white font-semibold mt-3">Proyección a 2030</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">Escenarios ilustrativos de valor agregado, inversión y pobreza para el departamento o un municipio.</p></a>
+          <a href="#asistente" data-tab="asistente" class="bg-panel border border-line rounded-2xl p-6 hover:border-gold/50 transition block">
+            <i class="fas fa-robot text-gold"></i><h3 class="text-white font-semibold mt-3">Asistente</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">Chat que busca en los datos del Observatorio y responde por dos vías, una rápida y otra más completa, citando la fuente.</p></a>
+          <div class="bg-panel border border-line rounded-2xl p-6">
+            <i class="fas fa-database text-gold"></i><h3 class="text-white font-semibold mt-3">Fuentes</h3>
+            <p class="text-soft text-sm mt-2 leading-relaxed">DANE (pobreza multidimensional y valor agregado municipal), reportes de inversión municipal y Consejo Privado de Competitividad – Universidad del Rosario.</p></div>
+        </div>
+      </div>
+
+      <div class="py-12">
+        <h2 class="font-serif text-xl text-white mb-2">Contexto departamental</h2>
+        <p class="text-soft text-sm mb-6">Cifras de referencia de Nariño frente al total nacional</p>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Pobreza Multidimensional</p><p class="text-2xl font-bold text-red-400 mt-1">19.7%</p><p class="text-[11px] text-red-400/70 mt-1">+8.2 pp vs Colombia</p></div>
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Pobreza Monetaria</p><p class="text-2xl font-bold text-red-400 mt-1">38.7%</p><p class="text-[11px] text-red-400/70 mt-1">+6.9 pp vs Colombia</p></div>
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Desempleo</p><p class="text-2xl font-bold text-emerald-400 mt-1">7.6%</p><p class="text-[11px] text-emerald-400/70 mt-1">-1.3 pp vs Colombia</p></div>
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Competitividad</p><p class="text-2xl font-bold text-gold mt-1">4.47</p><p class="text-[11px] text-soft mt-1">Puesto ~21 IDC</p></div>
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Educación (proxy)</p><p class="text-2xl font-bold text-gold mt-1">5.83</p><p class="text-[11px] text-soft mt-1">Fortaleza relativa</p></div>
+          <div class="text-center p-4 bg-panel/60 rounded-xl border border-line"><p class="text-[10px] text-soft uppercase tracking-wider">Valor Agregado</p><p class="text-2xl font-bold text-blue-400 mt-1">1.155</p><p class="text-[11px] text-soft mt-1">Miles de millones</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INDICADORES ============ -->
+    <section id="indicadores" class="tab-panel hidden py-12">
+      <h2 class="font-serif text-2xl md:text-3xl text-white mb-2">Indicadores municipales</h2>
+      <p class="text-soft text-sm mb-8">Pobreza, valor agregado e inversión de los 64 municipios de Nariño</p>
+      <div id="kpis" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8"></div>
+
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div class="bg-panel border border-line rounded-2xl overflow-hidden self-start">
+          <div class="px-5 py-3 border-b border-line text-sm font-medium text-gold">Resumen estadístico</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-soft text-xs uppercase tracking-wider bg-ink/50"><tr>
+                <th class="text-left px-4 py-3">Variable</th><th class="text-right px-3">n</th><th class="text-right px-3">Media</th><th class="text-right px-3">Mediana</th><th class="text-right px-3">Desv.</th><th class="text-right px-3">Mín</th><th class="text-right px-4">Máx</th></tr></thead>
+              <tbody id="tablaDesc" class="divide-y divide-line tabular-nums"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bg-panel border border-line rounded-2xl p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <p class="text-sm font-medium text-gold">Ranking municipal</p>
+            <div class="flex gap-2">
+              <select id="rankVar" aria-label="Indicador del ranking" class="bg-ink border border-line text-xs rounded-lg px-3 py-1.5 text-gray-300 max-w-[14rem]"></select>
+              <select id="rankModo" aria-label="Municipios a mostrar" class="bg-ink border border-line text-xs rounded-lg px-3 py-1.5 text-gray-300">
+                <option value="top">15 más altos</option><option value="bottom">15 más bajos</option><option value="all">Los 64</option></select>
+            </div>
+          </div>
+          <div class="scroll-y max-h-[480px]"><div id="barWrap" class="relative"><canvas id="barChart"></canvas></div></div>
+        </div>
+      </div>
+
+      <div id="deptoCard" class="hidden bg-panel border border-line rounded-2xl p-5 mt-8">
+        <p class="text-sm font-medium text-gold mb-4">Valor agregado del departamento de Nariño · serie anual</p>
+        <div class="relative h-64"><canvas id="deptoChart"></canvas></div>
+      </div>
+
+      <div class="bg-panel border border-line rounded-2xl overflow-hidden mt-8">
+        <div class="px-5 py-3 border-b border-line flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm font-medium text-gold">Tabla de los 64 municipios</p>
+          <input id="buscaMuni" type="search" placeholder="Buscar municipio…" class="bg-ink border border-line rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-gold" />
+        </div>
+        <div class="overflow-auto max-h-[520px] scroll-y">
+          <table class="w-full text-xs">
+            <thead class="text-soft uppercase tracking-wider bg-ink sticky top-0"><tr id="tablaHead"></tr></thead>
+            <tbody id="tablaMuni" class="divide-y divide-line"></tbody>
+          </table>
+        </div>
+        <p class="px-5 py-3 text-[11px] text-soft border-t border-line">s.d. = sin dato. Participación y valores per cápita se calculan en la página a partir de las columnas cargadas.</p>
+      </div>
+    </section>
+
+    <!-- ============ MAPAS ============ -->
+    <section id="mapas" class="tab-panel hidden py-12">
+      <h2 class="font-serif text-2xl md:text-3xl text-white mb-2">Mapas coropléticos</h2>
+      <p class="text-soft text-sm mb-6">Elige un indicador; pulsa un municipio para ver su ficha</p>
+      <div class="flex flex-wrap items-center gap-2 mb-5 text-xs">
+        <button data-mapvar="valor_agregado" class="px-3 py-2 border border-line rounded-lg">Valor agregado municipal</button>
+        <button data-mapvar="participacion_va" class="px-3 py-2 border border-line rounded-lg">Participación en el VA departamental</button>
+        <button data-mapvar="inversion" class="px-3 py-2 border border-line rounded-lg">Inversión municipal</button>
+        <button data-mapvar="ipm" class="px-3 py-2 border border-line rounded-lg">Pobreza (IPM)</button>
+        <select id="mapVar" aria-label="Indicador del mapa" class="bg-ink border border-line rounded-lg px-3 py-2 text-gray-300 ml-auto max-w-[16rem]"></select>
+      </div>
+      <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-panel border border-line rounded-2xl p-3">
+          <div id="mapa"></div>
+          <p id="mapEstado" class="text-[11px] text-soft mt-2 px-1">Cargando geometría…</p>
+        </div>
+        <div class="space-y-6">
+          <div id="mapLeyenda" class="bg-panel border border-line rounded-2xl p-5 text-xs space-y-1"><span class="text-soft">Leyenda</span></div>
+          <div id="mapFicha" class="bg-panel border border-line rounded-2xl p-5 text-xs"><p class="text-soft">Pulsa un municipio en el mapa o en la lista.</p></div>
+          <div class="bg-panel border border-line rounded-2xl overflow-hidden">
+            <p class="px-5 py-3 border-b border-line text-sm font-medium text-gold">Ordenados de mayor a menor</p>
+            <div id="mapRanking" class="scroll-y max-h-72 p-2 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ECONOMETRÍA ============ -->
+    <section id="econometria" class="tab-panel hidden py-12">
+      <h2 class="font-serif text-2xl md:text-3xl text-white mb-2">Econometría aplicada</h2>
+      <p class="text-soft text-sm mb-8">Relaciones entre pobreza, valor agregado e inversión en el corte municipal</p>
+      <div class="grid lg:grid-cols-2 gap-8">
+        <div class="bg-panel border border-line rounded-2xl p-6">
+          <h3 class="text-gold text-sm font-medium mb-4">Matriz de correlaciones (Pearson)</h3>
+          <div class="overflow-x-auto"><table class="w-full text-xs" id="corrTable"></table></div>
+          <p class="text-[11px] text-soft mt-4 leading-relaxed">Dorado: correlación positiva. Azul: negativa. La intensidad del color sigue el valor absoluto.</p>
+        </div>
+        <div class="bg-panel border border-line rounded-2xl p-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h3 class="text-gold text-sm font-medium">Modelo OLS</h3>
+            <label class="text-xs text-soft">Dependiente
+              <select id="olsY" class="bg-ink border border-line rounded-lg px-2 py-1.5 text-gray-300 ml-1 max-w-[12rem]"></select></label>
+          </div>
+          <p id="olsEq" class="text-xs text-soft mb-4"></p>
+          <div id="olsResults" class="font-mono bg-ink rounded-xl p-4 border border-line"></div>
+          <p id="olsNota" class="text-[11px] text-soft mt-4 leading-relaxed"></p>
+        </div>
+      </div>
+      <div class="bg-panel border border-line rounded-2xl p-6 mt-8">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3 class="text-gold text-sm font-medium">Dispersión entre dos indicadores</h3>
+          <div class="flex flex-wrap gap-2 text-xs items-center">
+            <label class="text-soft">X <select id="dispX" class="bg-ink border border-line rounded-lg px-2 py-1.5 text-gray-300 max-w-[12rem]"></select></label>
+            <label class="text-soft">Y <select id="dispY" class="bg-ink border border-line rounded-lg px-2 py-1.5 text-gray-300 max-w-[12rem]"></select></label>
+          </div>
+        </div>
+        <div class="relative h-80"><canvas id="scatterChart"></canvas></div>
+        <p id="dispR" class="text-xs text-soft mt-3"></p>
+      </div>
+    </section>
+
+    <!-- ============ PROYECCIÓN ============ -->
+    <section id="proyeccion" class="tab-panel hidden py-12">
+      <h2 class="font-serif text-2xl md:text-3xl text-white mb-2">Proyección a 2030</h2>
+      <p class="text-soft text-sm mb-8">Simulación de escenarios para el departamento o un municipio</p>
+      <div class="grid lg:grid-cols-5 gap-8">
+        <div class="lg:col-span-2 bg-panel border border-line rounded-2xl p-6 space-y-6">
+          <h3 class="text-gold text-sm font-medium">Parámetros del escenario</h3>
+          <label class="block text-xs text-soft">Territorio
+            <select id="proyEnt" class="mt-2 w-full bg-ink border border-line rounded-lg px-3 py-2 text-gray-300"></select></label>
+          <div><div class="flex justify-between text-xs mb-2"><label for="gVA" class="text-soft">Crecimiento del valor agregado (anual)</label><span id="gVAv" class="text-gold"></span></div>
+            <input type="range" id="gVA" min="0" max="8" step="0.1" value="3.5" class="w-full accent-gold" /></div>
+          <div><div class="flex justify-between text-xs mb-2"><label for="gInv" class="text-soft">Crecimiento de la inversión (anual)</label><span id="gInvv" class="text-gold"></span></div>
+            <input type="range" id="gInv" min="0" max="12" step="0.1" value="4" class="w-full accent-gold" /></div>
+          <div><div class="flex justify-between text-xs mb-2"><label for="rIPM" class="text-soft">Reducción de la pobreza IPM (por año)</label><span id="rIPMv" class="text-gold"></span></div>
+            <input type="range" id="rIPM" min="0" max="3" step="0.1" value="0.8" class="w-full accent-gold" /></div>
+        </div>
+        <div class="lg:col-span-3 bg-panel border border-line rounded-2xl p-6">
+          <h3 class="text-gold text-sm font-medium mb-4">Trayectoria hasta 2030</h3>
+          <div class="relative h-64"><canvas id="simChart"></canvas></div>
+          <div class="grid grid-cols-3 gap-4 mt-6">
+            <div class="bg-ink border border-line rounded-xl p-4 text-center"><p class="text-[10px] text-soft uppercase tracking-wider">Valor agregado 2030</p><p class="text-xl font-bold text-gold mt-1" id="va2030">—</p></div>
+            <div class="bg-ink border border-line rounded-xl p-4 text-center"><p class="text-[10px] text-soft uppercase tracking-wider">Inversión 2030</p><p class="text-xl font-bold text-blue-400 mt-1" id="inv2030">—</p></div>
+            <div class="bg-ink border border-line rounded-xl p-4 text-center"><p class="text-[10px] text-soft uppercase tracking-wider">Pobreza IPM 2030</p><p class="text-xl font-bold text-emerald-400 mt-1" id="ipm2030">—</p></div>
+          </div>
+          <p class="text-[11px] text-soft mt-4">Crecimiento compuesto desde el año base con las tasas elegidas. Supone ceteris paribus y es de carácter ilustrativo; no es un pronóstico.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ASISTENTE ============ -->
+    <section id="asistente" class="tab-panel hidden py-12">
+      <div class="max-w-2xl mx-auto">
+        <h2 class="font-serif text-2xl md:text-3xl text-white text-center mb-2">Asistente del Observatorio</h2>
+        <p class="text-soft text-sm text-center mb-8">Busca en los datos cargados y responde por dos vías: una rápida y otra más completa, con sus fuentes</p>
+        <div class="bg-panel border border-line rounded-2xl overflow-hidden">
+          <div class="px-5 py-3 border-b border-line flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-gold flex items-center justify-center"><i class="fas fa-robot text-ink text-[10px]"></i></div>
+            <span class="text-sm font-medium">Asistente académico</span>
+          </div>
+          <div id="chatMessages" class="h-96 overflow-y-auto scroll-y p-5 space-y-4 bg-ink/40" aria-live="polite"></div>
+          <div class="px-4 pt-3 flex flex-wrap gap-2 text-[11px]">
+            <button data-q="¿Qué municipios tienen mayor pobreza?" class="px-3 py-1.5 border border-line rounded-full hover:border-gold/50">Mayor pobreza</button>
+            <button data-q="¿Cuál es el valor agregado de Pasto?" class="px-3 py-1.5 border border-line rounded-full hover:border-gold/50">Valor agregado de Pasto</button>
+            <button data-q="Compara la inversión de Ipiales y Tumaco" class="px-3 py-1.5 border border-line rounded-full hover:border-gold/50">Ipiales vs. Tumaco</button>
+            <button data-q="¿Qué hay en la página?" class="px-3 py-1.5 border border-line rounded-full hover:border-gold/50">¿Qué hay en la página?</button>
+          </div>
+          <div class="p-4 flex gap-3">
+            <input id="chatInput" type="text" placeholder="Escribe tu pregunta…" aria-label="Pregunta" class="flex-1 bg-ink border border-line rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gold placeholder-gray-600" />
+            <button id="chatSend" aria-label="Enviar" class="px-4 py-2.5 bg-gold text-ink rounded-lg hover:bg-amber-400 transition"><i class="fas fa-paper-plane text-sm"></i></button>
+          </div>
+        </div>
+        <p class="text-[11px] text-soft mt-4 text-center">El asistente no usa un modelo de lenguaje: recupera fragmentos de la base del Observatorio y los cita. Si algo no está en los datos, lo dice.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="py-10 border-t border-line">
+    <div class="max-w-6xl mx-auto px-5 text-center">
+      <p class="text-sm text-white font-medium">Observatorio Regional de Nariño</p>
+      <p class="text-xs text-soft mt-2">Análisis Económico, Territorial y Competitividad Municipal</p>
+      <p class="text-[11px] text-gray-500 mt-5">Camila Guerrero · Geovanny Betancourt<br>Fuentes: DANE · Consejo Privado de Competitividad – Universidad del Rosario</p>
+    </div>
+  </footer>
+
+  <script>
+/* =====================================================================
+   Observatorio Regional de Nariño — lógica de la página
+   Edita CONFIG si tus bases usan otras unidades o año base.
+   ===================================================================== */
+const CONFIG = {
+  anioBase: 2024,                       // año de corte de data/municipios.csv
+  archivoDatos: 'data/municipios.csv',
+  archivoDepto: 'data/departamento.csv', // opcional: anio, valor_agregado
+  archivoGeo: 'data/narino.geojson',
+  // Respaldo si no existe data/narino.geojson (archivo nacional, pesado):
+  geoRemoto: 'https://raw.githubusercontent.com/santiblanko/colombia.geojson/master/mpio.json',
+  unidades: {
+    valor_agregado: 'miles de millones COP',
+    inversion: 'millones COP'
+  }
+};
+
+/* ---------- Los 64 municipios (DIVIPOLA) ---------- */
+const BASE = [
+['52001','Pasto'],['52019','Albán'],['52022','Aldana'],['52036','Ancuyá'],['52051','Arboleda'],
+['52079','Barbacoas'],['52083','Belén'],['52110','Buesaco'],['52203','Colón'],['52207','Consacá'],
+['52210','Contadero'],['52215','Córdoba'],['52224','Cuaspud'],['52227','Cumbal'],['52233','Cumbitara'],
+['52240','Chachagüí'],['52250','El Charco'],['52254','El Peñol'],['52256','El Rosario'],['52258','El Tablón de Gómez'],
+['52260','El Tambo'],['52287','Funes'],['52317','Guachucal'],['52320','Guaitarilla'],['52323','Gualmatán'],
+['52352','Iles'],['52354','Imués'],['52356','Ipiales'],['52378','La Cruz'],['52381','La Florida'],
+['52385','La Llanada'],['52390','La Tola'],['52399','La Unión'],['52405','Leiva'],['52411','Linares'],
+['52418','Los Andes'],['52427','Magüí'],['52435','Mallama'],['52473','Mosquera'],['52480','Nariño'],
+['52490','Olaya Herrera'],['52506','Ospina'],['52520','Francisco Pizarro'],['52540','Policarpa'],['52560','Potosí'],
+['52565','Providencia'],['52573','Puerres'],['52585','Pupiales'],['52612','Ricaurte'],['52621','Roberto Payán'],
+['52678','Samaniego'],['52683','Sandoná'],['52685','San Bernardo'],['52687','San Lorenzo'],['52693','San Pablo'],
+['52694','San Pedro de Cartago'],['52696','Santa Bárbara'],['52699','Santacruz'],['52720','Sapuyes'],['52786','Taminango'],
+['52788','Tangua'],['52835','San Andrés de Tumaco'],['52838','Túquerres'],['52885','Yacuanquer']
+];
+const ALIAS = {
+  'san juan de pasto':'52001','san jose de alban':'52019','san jose':'52019','berruecos':'52051','genova':'52203',
+  'carlosama':'52224','el tablon':'52258','sotomayor':'52418','magui payan':'52427','piedrancha':'52435',
+  'bocas de satinga':'52490','salahonda':'52520','cartago':'52694','iscuande':'52696','santa cruz':'52699',
+  'guachaves':'52699','tumaco':'52835'
+};
+
+/* ---------- Utilidades ---------- */
+const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const slug = s => norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* miles=true: los puntos de la columna son separadores de miles */
+function parseNum(v, miles) {
+  if (v == null) return null;
+  let s = String(v).trim().replace(/[\s$%]/g, '');
+  if (!s || /^(na|nd|n\/a|s\.?d\.?|-+)$/i.test(s)) return null;
+  if (miles && !s.includes(',')) s = s.replace(/\./g, '');
+  const d = (s.match(/\./g) || []).length, c = (s.match(/,/g) || []).length;
+  if (d && c) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (c) s = c > 1 ? s.replace(/,/g, '') : s.replace(',', '.');
+  else if (d > 1) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseCSV(text) {
+  text = String(text).replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const count = ch => first.split(ch).length;
+  const sep = count(';') > count(',') ? ';' : (count('\t') > count(',') ? '\t' : ',');
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some(c => c.trim() !== '')) rows.push(row);
+      row = [];
+    } else cur += ch;
+  }
+  row.push(cur); if (row.some(c => c.trim() !== '')) rows.push(row);
+  if (!rows.length) return { headers: [], rows: [] };
+  const headers = rows[0].map(h => h.trim());
+  return { headers, rows: rows.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? '').trim()]))) };
+}
+
+/* ---------- Indicadores ---------- */
+const IND = {
+  ipm:              { label: 'Pobreza multidimensional (IPM)', corto: 'Pobreza (IPM)', unit: '%', dec: 1, claves: ['pobreza', 'ipm', 'multidimensional', 'pobre', 'pobres'] },
+  valor_agregado:   { label: 'Valor agregado municipal', corto: 'Valor agregado', unit: CONFIG.unidades.valor_agregado, dec: 1, claves: ['valor agregado', 'pib', 'economia', 'produccion', 'producto interno'] },
+  participacion_va: { label: 'Participación en el valor agregado departamental', corto: 'Participación VA', unit: '%', dec: 2, derivado: true, claves: ['participacion', 'peso', 'aporta', 'aporte'] },
+  inversion:        { label: 'Inversión municipal', corto: 'Inversión', unit: CONFIG.unidades.inversion, dec: 0, claves: ['inversion', 'invierte', 'invirtio', 'gasto'] },
+  va_pc:            { label: 'Valor agregado per cápita', corto: 'VA per cápita', unit: 'millones COP/hab', dec: 2, derivado: true, claves: ['valor agregado per capita', 'pib per capita', 'valor agregado por habitante'] },
+  inv_pc:           { label: 'Inversión per cápita', corto: 'Inversión per cápita', unit: 'miles COP/hab', dec: 0, derivado: true, claves: ['inversion per capita', 'inversion por habitante'] },
+  poblacion:        { label: 'Población', corto: 'Población', unit: 'hab', dec: 0, claves: ['poblacion', 'habitantes'] }
+};
+const HEADER_ALIAS = {
+  codigo: ['codigo', 'cod', 'divipola', 'codigo_dane', 'cod_dane', 'cod_mpio', 'codigo_municipio', 'mpio_cdpmp', 'codmpio'],
+  municipio: ['municipio', 'nombre', 'mpio', 'nombre_municipio', 'entidad'],
+  ipm: ['ipm', 'pobreza_multidimensional', 'pobreza', 'pobreza_multidimensional_ipm'],
+  valor_agregado: ['valor_agregado', 'va', 'pib', 'pib_municipal', 'valor_agregado_municipal'],
+  inversion: ['inversion', 'inversion_municipal', 'inversion_total'],
+  poblacion: ['poblacion', 'pob', 'habitantes']
+};
+
+function buildDataset(parsed) {
+  const data = BASE.map(([codigo, municipio]) => ({ codigo, municipio, v: {} }));
+  const byCode = Object.fromEntries(data.map(d => [d.codigo, d]));
+  const byName = Object.fromEntries(data.map(d => [norm(d.municipio), d.codigo]));
+  Object.assign(byName, ALIAS);
+  const colOf = {}; const extras = [];
+  (parsed.headers || []).forEach(h => {
+    const s = slug(h); if (!s) return;
+    const std = Object.keys(HEADER_ALIAS).find(k => HEADER_ALIAS[k].includes(s));
+    if (std) { if (!colOf[std]) colOf[std] = h; }
+    else extras.push([s, h]);
+  });
+  // ¿La columna usa el punto como separador de miles (formato colombiano)?
+  const miles = {};
+  (parsed.headers || []).forEach(h => {
+    const raw = (parsed.rows || []).map(r => String(r[h] ?? '').trim().replace(/[\s$%]/g, '')).filter(Boolean);
+    const conPunto = raw.filter(x => x.includes('.'));
+    miles[h] = raw.some(x => /,\d+$/.test(x) && !/,\d{3},/.test(x) && (x.match(/,/g) || []).length === 1 && x.includes('.') ) ||
+      (conPunto.length >= 3 && conPunto.every(x => /^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(x)));
+  });
+  const sinCruce = [];
+  (parsed.rows || []).forEach(r => {
+    let code = colOf.codigo ? String(r[colOf.codigo]).replace(/\D/g, '') : '';
+    if (code.length === 3) code = '52' + code;
+    if (code.length === 4) code = '5' + code;
+    let d = byCode[code];
+    if (!d && colOf.municipio) d = byCode[byName[norm(r[colOf.municipio])]];
+    if (!d) { const n = colOf.municipio ? r[colOf.municipio] : code; if (n) sinCruce.push(n); return; }
+    ['ipm', 'valor_agregado', 'inversion', 'poblacion'].forEach(k => {
+      if (colOf[k]) { const n = parseNum(r[colOf[k]], miles[colOf[k]]); if (n != null) d.v[k] = n; }
+    });
+    extras.forEach(([s, h]) => {
+      const n = parseNum(r[h], miles[h]);
+      if (n != null) {
+        d.v[s] = n;
+        if (!IND[s]) IND[s] = { label: h, corto: h, unit: '', dec: 2, extra: true, claves: [norm(h).replace(/_/g, ' ')] };
+      }
+    });
+  });
+  const totVA = data.reduce((a, d) => a + (d.v.valor_agregado ?? 0), 0);
+  data.forEach(d => {
+    const { valor_agregado: va, inversion: inv, poblacion: pob } = d.v;
+    if (va != null && totVA > 0) d.v.participacion_va = 100 * va / totVA;
+    if (va != null && pob > 0) d.v.va_pc = va * 1000 / pob;
+    if (inv != null && pob > 0) d.v.inv_pc = inv * 1000 / pob;
+  });
+  const keys = Object.keys(IND).filter(k => data.some(d => d.v[k] != null));
+  return { data, keys, sinCruce };
+}
+
+/* ---------- Estadística ---------- */
+const S = {
+  vals: (data, k) => data.map(d => d.v[k]).filter(x => x != null),
+  sum: a => a.reduce((x, y) => x + y, 0),
+  mean: a => a.length ? S.sum(a) / a.length : null,
+  sd: a => { if (a.length < 2) return null; const m = S.mean(a); return Math.sqrt(S.sum(a.map(x => (x - m) ** 2)) / (a.length - 1)); },
+  median: a => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; },
+  quantile: (a, p) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return null; const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return s[lo] + (s[hi] - s[lo]) * (i - lo); },
+  pearson: (x, y) => {
+    const n = x.length; if (n < 3) return null;
+    const mx = S.mean(x), my = S.mean(y); let sxy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < n; i++) { sxy += (x[i] - mx) * (y[i] - my); sxx += (x[i] - mx) ** 2; syy += (y[i] - my) ** 2; }
+    return sxx && syy ? sxy / Math.sqrt(sxx * syy) : null;
+  }
+};
+function pairs(data, a, b) { const x = [], y = []; data.forEach(d => { if (d.v[a] != null && d.v[b] != null) { x.push(d.v[a]); y.push(d.v[b]); } }); return [x, y]; }
+
+function invertMatrix(M) {
+  const n = M.length, A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => +(i === j))]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    if (Math.abs(A[p][c]) < 1e-12) return null;
+    [A[c], A[p]] = [A[p], A[c]];
+    const piv = A[c][c]; for (let j = 0; j < 2 * n; j++) A[c][j] /= piv;
+    for (let r = 0; r < n; r++) if (r !== c) { const f = A[r][c]; if (f) for (let j = 0; j < 2 * n; j++) A[r][j] -= f * A[c][j]; }
+  }
+  return A.map(r => r.slice(n));
+}
+/* OLS: y (n), X (n x k, sin intercepto) */
+function ols(y, X) {
+  const n = y.length, k = X[0].length + 1;
+  if (n <= k) return null;
+  const Z = X.map(r => [1, ...r]);
+  const XtX = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => S.sum(Z.map(r => r[i] * r[j]))));
+  const Xty = Array.from({ length: k }, (_, i) => S.sum(Z.map((r, t) => r[i] * y[t])));
+  const inv = invertMatrix(XtX); if (!inv) return null;
+  const beta = inv.map(r => S.sum(r.map((v, j) => v * Xty[j])));
+  const res = y.map((v, t) => v - S.sum(Z[t].map((z, j) => z * beta[j])));
+  const sse = S.sum(res.map(e => e * e)), my = S.mean(y), sst = S.sum(y.map(v => (v - my) ** 2));
+  const s2 = sse / (n - k), se = inv.map((r, i) => Math.sqrt(Math.max(0, s2 * r[i])));
+  const r2 = sst ? 1 - sse / sst : null;
+  return { n, k, beta, se, t: beta.map((b, i) => se[i] ? b / se[i] : null), r2, r2adj: r2 == null ? null : 1 - (1 - r2) * (n - 1) / (n - k) };
+}
+
+function fmt(k, v) {
+  if (v == null || !Number.isFinite(v)) return 's.d.';
+  const dec = IND[k]?.dec ?? 2;
+  return v.toLocaleString('es-CO', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+const fmtU = (k, v) => v == null ? 's.d.' : fmt(k, v) + (IND[k]?.unit === '%' ? ' %' : (IND[k]?.unit ? ' ' + IND[k].unit : ''));
+function ranking(data, k, desc = true) { return data.filter(d => d.v[k] != null).sort((a, b) => desc ? b.v[k] - a.v[k] : a.v[k] - b.v[k]); }
+
+/* ---------- Asistente: recuperación + dos vías ----------
+   Inspirado en el orquestador del cuaderno de Colab: trocear el
+   conocimiento, recuperar los k fragmentos más cercanos y responder
+   por una vía rápida y otra precisa, citando las fuentes. Aquí la
+   recuperación es TF-IDF y todo corre en el navegador. */
+const STOP = new Set('a al algo ante como con cual cuales cuando de del desde donde el ella en entre era es esa ese eso esta este esto ha hay la las le lo los mas me mi muy no nos o para pero por que quien se segun ser si sin sobre su sus tan te tiene tu un una uno y ya cuanto cuanta cuantos dime dame cuentame son fue'.split(' '));
+const tokens = s => norm(s).split(/[^a-z0-9]+/).filter(t => t.length > 2 && !STOP.has(t));
+
+function buildChunks(ds) {
+  const { data, keys } = ds; const ch = [];
+  const fuenteDatos = 'data/municipios.csv';
+  ch.push({ title: 'Qué es el Observatorio', source: 'Presentación', text: 'El Observatorio Regional de Nariño es una plataforma académica de análisis económico y competitividad municipal para los 64 municipios del departamento de Nariño, Colombia. Reúne pobreza multidimensional, valor agregado (PIB municipal) e inversión municipal.' });
+  ch.push({ title: 'Autores', source: 'Presentación', text: 'Los autores del Observatorio son Camila Guerrero (análisis de datos, indicadores e interfaz) y Geovanny Betancourt (econometría y modelos predictivos).' });
+  ch.push({ title: 'Qué hay en la página', source: 'Presentación', text: 'La página tiene seis pestañas: Presentación (quiénes somos y contenido), Indicadores (resumen estadístico, ranking y tabla de los 64 municipios), Mapas (mapas coropléticos de valor agregado municipal, participación en el valor agregado departamental, inversión municipal y pobreza), Econometría (matriz de correlaciones de Pearson y modelo OLS), Proyección (escenarios a 2030) y Asistente (este chat).' });
+  ch.push({ title: 'Fuentes de datos', source: 'Presentación', text: 'Las fuentes son el DANE (pobreza multidimensional municipal y valor agregado municipal de las cuentas departamentales), los reportes de inversión municipal y el Consejo Privado de Competitividad con la Universidad del Rosario.' });
+  ch.push({ title: 'Metodología', source: 'Econometría', text: 'La correlación se mide con el coeficiente de Pearson entre pares de indicadores municipales. El modelo OLS estima por mínimos cuadrados ordinarios la relación entre una variable dependiente y las demás, con valor agregado e inversión en logaritmos. Las proyecciones a 2030 aplican tasas de crecimiento compuesto elegidas por el usuario y son ilustrativas.' });
+  ch.push({ title: 'Mapas coropléticos', source: 'Mapas', text: 'Un mapa coroplético colorea cada municipio según el valor de un indicador. Los colores se asignan por quintiles: los municipios más claros tienen los valores más altos. Se puede cambiar el indicador y pulsar un municipio para ver su ficha.' });
+  keys.forEach(k => {
+    const r = ranking(data, k); if (!r.length) return;
+    const a = r.map(d => d.v[k]);
+    const top = r.slice(0, 5).map(d => `${d.municipio} (${fmt(k, d.v[k])})`).join(', ');
+    const bot = r.slice(-5).reverse().map(d => `${d.municipio} (${fmt(k, d.v[k])})`).join(', ');
+    let t = `${IND[k].label}${IND[k].unit ? ' en ' + IND[k].unit : ''}. Municipios con dato: ${r.length} de 64. Promedio ${fmt(k, S.mean(a))}, mediana ${fmt(k, S.median(a))}, mínimo ${fmt(k, Math.min(...a))} y máximo ${fmt(k, Math.max(...a))}. Valores más altos: ${top}. Valores más bajos: ${bot}.`;
+    if (['valor_agregado', 'inversion', 'poblacion'].includes(k)) t += ` Total departamental (suma de municipios): ${fmt(k, S.sum(a))}.`;
+    ch.push({ title: IND[k].label, source: fuenteDatos, text: t, key: k });
+  });
+  data.forEach(d => {
+    const ks = keys.filter(k => d.v[k] != null); if (!ks.length) return;
+    const parts = ks.map(k => { const r = ranking(data, k); return `${IND[k].label}: ${fmtU(k, d.v[k])} (puesto ${r.indexOf(d) + 1} de ${r.length})`; });
+    ch.push({ title: d.municipio, source: fuenteDatos, text: `Municipio de ${d.municipio} (código DANE ${d.codigo}). ${parts.join('. ')}.`, code: d.codigo });
+  });
+  // índice TF-IDF
+  const df = {};
+  ch.forEach(c => { c.tf = {}; tokens(c.title + ' ' + c.title + ' ' + c.text).forEach(t => c.tf[t] = (c.tf[t] || 0) + 1); Object.keys(c.tf).forEach(t => df[t] = (df[t] || 0) + 1); });
+  const idf = t => Math.log(1 + ch.length / (df[t] || 0.5));
+  ch.forEach(c => { c.vec = {}; let n = 0; for (const t in c.tf) { c.vec[t] = (1 + Math.log(c.tf[t])) * idf(t); n += c.vec[t] ** 2; } c.norma = Math.sqrt(n) || 1; });
+  return { chunks: ch, idf };
+}
+function retrieve(index, query, k = 4) {
+  const q = {}; tokens(query).forEach(t => q[t] = (q[t] || 0) + 1);
+  let qn = 0; for (const t in q) { q[t] *= index.idf(t); qn += q[t] ** 2; } qn = Math.sqrt(qn) || 1;
+  return index.chunks.map(c => { let s = 0; for (const t in q) if (c.vec[t]) s += q[t] * c.vec[t]; return { c, score: s / (qn * c.norma) }; })
+    .filter(r => r.score > 0).sort((a, b) => b.score - a.score).slice(0, k);
+}
+function detectMunicipios(ds, query) {
+  const q = ' ' + norm(query).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  const names = [...ds.data.map(d => [norm(d.municipio), d.codigo]), ...Object.entries(ALIAS)].sort((a, b) => b[0].length - a[0].length);
+  const found = []; let rest = q;
+  names.forEach(([n, code]) => {
+    if (n === 'narino') { if (!/municipio de narino/.test(q)) return; }
+    else if (n === 'san jose' || n === 'cartago') return;
+    if (rest.includes(' ' + n + ' ')) { if (!found.includes(code)) found.push(code); rest = rest.replace(' ' + n + ' ', ' # '); }
+  });
+  return found.map(c => ds.data.find(d => d.codigo === c));
+}
+function detectIndicadores(ds, query) {
+  const q = ' ' + norm(query) + ' ';
+  const orden = ['va_pc', 'inv_pc', ...Object.keys(IND).filter(k => !['va_pc', 'inv_pc'].includes(k))];
+  const out = []; let rest = q;
+  orden.forEach(k => {
+    if (!ds.keys.includes(k)) return;
+    const hit = (IND[k].claves || []).find(c => rest.includes(c));
+    if (hit) { out.push(k); rest = rest.split(hit).join(' '); }
+  });
+  return out;
+}
+function answer(ds, index, query) {
+  const hits = retrieve(index, query, 4);
+  const munis = detectMunicipios(ds, query), inds = detectIndicadores(ds, query);
+  const q = norm(query);
+  const alto = /(mayor|mas alt|maxim|mas grande|mejor|lider|top|primer)/.test(q), bajo = /(menor|mas baj|minim|peor|ultim|mas pequen)/.test(q);
+  let rapida = null; const fuentes = new Set();
+  if (!ds.keys.length && (munis.length || inds.length || alto || bajo)) {
+    rapida = 'Todavía no hay cifras cargadas: el archivo data/municipios.csv está vacío.';
+  } else if (munis.length && inds.length) {
+    rapida = munis.map(d => inds.map(k => `${IND[k].corto} de ${d.municipio}: ${fmtU(k, d.v[k])}`).join('; ')).join('. ') + '.';
+    fuentes.add('data/municipios.csv');
+  } else if (munis.length >= 2) {
+    const ks = ds.keys.filter(k => !IND[k].derivado).slice(0, 4);
+    rapida = munis.map(d => `${d.municipio}: ` + ks.map(k => `${IND[k].corto} ${fmtU(k, d.v[k])}`).join(', ')).join('. ') + '.';
+    fuentes.add('data/municipios.csv');
+  } else if (inds.length && (alto || bajo)) {
+    const k = inds[0], r = ranking(ds.data, k, !bajo || alto).slice(0, 5);
+    rapida = `${IND[k].label}, ${alto || !bajo ? 'valores más altos' : 'valores más bajos'}: ` + r.map((d, i) => `${i + 1}. ${d.municipio} (${fmtU(k, d.v[k])})`).join('; ') + '.';
+    fuentes.add('data/municipios.csv');
+  } else if (munis.length === 1) {
+    const c = index.chunks.find(c => c.code === munis[0].codigo);
+    rapida = c ? c.text : `No hay cifras cargadas para ${munis[0].municipio}.`;
+    if (c) fuentes.add(c.source);
+  }
+  const fuerte = hits.length && hits[0].score >= 0.12;
+  if (!rapida) {
+    if (!fuerte) return { rapida: 'No encuentro eso en la información del Observatorio. Prueba con un municipio, un indicador (pobreza, valor agregado, inversión) o pregunta qué hay en la página.', precisa: '', fuentes: [] };
+    const t = hits[0].c.text; rapida = t.length > 260 ? t.slice(0, t.lastIndexOf('.', 260) + 1 || 260) : t;
+  }
+  const usados = hits.filter(h => h.score >= 0.08).slice(0, 3);
+  usados.forEach(h => fuentes.add(h.c.source));
+  const precisa = usados.map(h => `[${h.c.title}] ${h.c.text}`).filter(t => !t.endsWith(rapida)).join('\n\n');
+  return { rapida, precisa, fuentes: [...fuentes] };
+}
+
+if (typeof module !== 'undefined') module.exports = { CONFIG, BASE, IND, norm, slug, parseNum, parseCSV, buildDataset, S, ols, invertMatrix, pairs, ranking, buildChunks, retrieve, answer, detectMunicipios, detectIndicadores, fmt, fmtU, featCode: p => featCode(p) };
+
+/* =====================================================================
+   Interfaz
+   ===================================================================== */
+let DS = { data: [], keys: [], sinCruce: [] }, INDEX = null, charts = {}, map = null, geoLayer = null, GEO = null, geoEstado = 'pendiente';
+const $ = id => document.getElementById(id);
+const RAMPA = ['#3a3317', '#6b5a1e', '#9c8223', '#c9a227', '#f3d77a'];
+const GRID = '#27272a', TXT = '#a1a1aa';
+
+function featCode(p) {
+  const o = {}; for (const k in p) o[k.toLowerCase()] = p[k];
+  for (const k of ['mpio_cdpmp', 'mpio_ccnct', 'mpios', 'cod_dane', 'codigo', 'divipola', 'cod_mpio', 'codigo_dane', 'cod_divipola', 'id']) {
+    const v = o[k] != null ? String(o[k]).replace(/\D/g, '') : '';
+    if (v.length === 5) return v; if (v.length === 4) return '5' + v;
+  }
+  const dp = o.dpto_ccdgo ?? o.dpto ?? o.cod_dpto, mp = o.mpio_ccdgo ?? o.mpio;
+  if (mp != null) { const m = String(mp).replace(/\D/g, ''); if (m.length === 5) return m; if (dp != null) return String(dp).padStart(2, '0') + m.padStart(3, '0'); }
+  return null;
+}
+function featName(p) { const o = {}; for (const k in p) o[k.toLowerCase()] = p[k]; return o.mpio_cnmbr ?? o.nombre_mpi ?? o.municipio ?? o.nombre ?? o.name ?? ''; }
+
+async function fetchText(url) { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); return r.text(); }
+
+async function init() {
+  setupTabs();
+  let parsed = { headers: [], rows: [] }, errorDatos = false;
+  try { parsed = parseCSV(await fetchText(CONFIG.archivoDatos)); } catch (e) { errorDatos = true; }
+  DS = buildDataset(parsed);
+  try {   // opcional: años de cada indicador, generado por herramientas/preparar_datos.py
+    const meta = JSON.parse(await fetchText('data/meta.json'));
+    if (meta.anioBase) CONFIG.anioBase = +meta.anioBase;
+    const an = meta.anios || {};
+    Object.keys(IND).forEach(k => {
+      const a = an[k] ?? Object.entries(an).find(([n]) => slug(n) === k)?.[1] ?? ({ participacion_va: an.valor_agregado, va_pc: an.valor_agregado, inv_pc: an.inversion })[k];
+      if (a) IND[k].label += ' · ' + a;
+    });
+  } catch (e) {}
+  INDEX = buildChunks(DS);
+  renderEstado(errorDatos);
+  renderKPIs(); renderSelectores(); renderDescriptiva(); renderRanking(); renderTabla(); renderDispersion();
+  renderCorr(); renderOLS(); renderProyeccion(); setupChat(); pintarMapa();
+  renderDepto();
+  window.addEventListener('hashchange', aplicarHash); aplicarHash();
+}
+
+function setupTabs() {
+  document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); location.hash = b.dataset.tab; }));
+}
+function aplicarHash() {
+  const ids = [...document.querySelectorAll('.tab-panel')].map(p => p.id);
+  const tab = ids.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'presentacion';
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== tab));
+  document.querySelectorAll('nav [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('text-gold', on); b.classList.toggle('border-gold', on); b.classList.toggle('border-transparent', !on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  window.scrollTo(0, 0);
+  if (tab === 'mapas') initMapa();
+}
+
+function renderEstado(errorDatos) {
+  const n = DS.data.filter(d => Object.keys(d.v).length).length, el = $('estadoDatos');
+  if (n === 64 && !DS.sinCruce.length) { el.classList.add('hidden'); return; }
+  let msg = errorDatos ? 'No se encontró <code>data/municipios.csv</code>.' : n === 0 ? 'El archivo <code>data/municipios.csv</code> todavía no tiene cifras. Complétalo para activar indicadores, mapas y asistente.' : `Hay cifras para ${n} de los 64 municipios.`;
+  if (DS.sinCruce.length) msg += ` Filas sin cruce con la lista DIVIPOLA: ${DS.sinCruce.slice(0, 6).map(esc).join(', ')}${DS.sinCruce.length > 6 ? '…' : ''}.`;
+  el.innerHTML = '<i class="fas fa-circle-info mr-2"></i>' + msg; el.classList.remove('hidden');
+}
+
+function renderKPIs() {
+  const d = DS.data, kp = [];
+  const va = S.vals(d, 'valor_agregado'), inv = S.vals(d, 'inversion'), ipm = S.vals(d, 'ipm'), pob = S.vals(d, 'poblacion');
+  kp.push(['Municipios', '64', `${d.filter(x => Object.keys(x.v).length).length} con datos`]);
+  if (ipm.length) kp.push(['Pobreza multidimensional', fmt('ipm', S.mean(ipm)) + ' %', 'Promedio municipal simple']);
+  if (va.length) kp.push(['Valor agregado', fmt('valor_agregado', S.sum(va)), 'Suma municipal · ' + IND.valor_agregado.unit]);
+  if (inv.length) kp.push(['Inversión municipal', fmt('inversion', S.sum(inv)), 'Suma municipal · ' + IND.inversion.unit]);
+  if (pob.length) kp.push(['Población', fmt('poblacion', S.sum(pob)), 'Habitantes']);
+  $('kpis').innerHTML = kp.map(([a, b, c]) => `<div class="bg-panel border border-line rounded-xl p-4"><p class="text-[10px] text-soft uppercase tracking-wider">${a}</p><p class="text-2xl font-bold text-gold mt-1">${b}</p><p class="text-[11px] text-soft mt-1">${c}</p></div>`).join('');
+}
+
+function opciones(keys, sel) { return keys.map(k => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(IND[k].label)}</option>`).join(''); }
+function renderSelectores() {
+  const ks = DS.keys.filter(k => k !== 'poblacion'), all = DS.keys;
+  const vacio = '<option value="">Sin datos</option>';
+  $('rankVar').innerHTML = all.length ? opciones(all, all[0]) : vacio;
+  $('mapVar').innerHTML = ks.length ? opciones(ks, ks.includes('valor_agregado') ? 'valor_agregado' : ks[0]) : vacio;
+  $('dispX').innerHTML = all.length ? opciones(all, all.includes('va_pc') ? 'va_pc' : all[0]) : vacio;
+  $('dispY').innerHTML = all.length ? opciones(all, all.includes('ipm') ? 'ipm' : all[Math.min(1, all.length - 1)]) : vacio;
+  $('olsY').innerHTML = ks.length ? opciones(ks.filter(k => !IND[k].derivado), ks.includes('ipm') ? 'ipm' : ks[0]) : vacio;
+  ['rankVar', 'rankModo'].forEach(i => $(i).addEventListener('change', renderRanking));
+  $('mapVar').addEventListener('change', pintarMapa);
+  ['dispX', 'dispY'].forEach(i => $(i).addEventListener('change', renderDispersion));
+  $('olsY').addEventListener('change', renderOLS);
+  document.querySelectorAll('[data-mapvar]').forEach(b => b.addEventListener('click', () => { if (DS.keys.includes(b.dataset.mapvar)) { $('mapVar').value = b.dataset.mapvar; pintarMapa(); } }));
+  $('buscaMuni').addEventListener('input', renderTabla);
+}
+
+function renderDescriptiva() {
+  const rows = DS.keys.map(k => { const a = S.vals(DS.data, k); return `<tr><td class="px-4 py-2.5 text-gray-300">${esc(IND[k].corto)}<span class="block text-[10px] text-soft">${esc(IND[k].unit)}</span></td><td class="text-right px-3">${a.length}</td><td class="text-right px-3">${fmt(k, S.mean(a))}</td><td class="text-right px-3">${fmt(k, S.median(a))}</td><td class="text-right px-3">${fmt(k, S.sd(a))}</td><td class="text-right px-3">${fmt(k, Math.min(...a))}</td><td class="text-right px-4">${fmt(k, Math.max(...a))}</td></tr>`; });
+  $('tablaDesc').innerHTML = rows.join('') || '<tr><td colspan="7" class="px-4 py-8 text-center text-soft">Sin datos cargados.</td></tr>';
+}
+
+function chart(id, cfg) { if (charts[id]) charts[id].destroy(); if (typeof Chart === 'undefined') return; charts[id] = new Chart($(id), cfg); }
+const ejes = (extra = {}) => ({ ticks: { color: TXT, font: { size: 10 } }, grid: { color: GRID }, ...extra });
+
+function renderRanking() {
+  const k = $('rankVar').value, modo = $('rankModo').value; if (!k) return;
+  let r = ranking(DS.data, k); if (modo === 'top') r = r.slice(0, 15); if (modo === 'bottom') r = r.slice(-15);
+  $('barWrap').style.height = Math.max(220, r.length * 20 + 40) + 'px';
+  chart('barChart', { type: 'bar', data: { labels: r.map(d => d.municipio), datasets: [{ data: r.map(d => d.v[k]), backgroundColor: '#c9a227', borderRadius: 3, barThickness: 12 }] },
+    options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtU(k, c.parsed.x) } } }, scales: { x: ejes({ title: { display: !!IND[k].unit, text: IND[k].unit, color: TXT, font: { size: 10 } } }), y: ejes({ grid: { display: false }, ticks: { color: '#d4d4d8', font: { size: 10 }, autoSkip: false } }) } } });
+}
+
+function renderTabla() {
+  const f = norm($('buscaMuni').value), ks = DS.keys;
+  $('tablaHead').innerHTML = '<th class="text-left px-4 py-3">Municipio</th><th class="text-left px-3">Código</th>' + ks.map(k => `<th class="text-right px-3 whitespace-nowrap" title="${esc(IND[k].unit)}">${esc(IND[k].corto)}</th>`).join('');
+  $('tablaMuni').innerHTML = DS.data.filter(d => !f || norm(d.municipio).includes(f)).map(d => `<tr class="hover:bg-ink/60"><td class="px-4 py-2 text-gray-200">${d.municipio}</td><td class="px-3 text-soft">${d.codigo}</td>${ks.map(k => `<td class="text-right px-3 tabular-nums">${fmt(k, d.v[k])}</td>`).join('')}</tr>`).join('');
+}
+
+function renderDispersion() {
+  const a = $('dispX').value, b = $('dispY').value; if (!a || !b) return;
+  const pts = DS.data.filter(d => d.v[a] != null && d.v[b] != null).map(d => ({ x: d.v[a], y: d.v[b], m: d.municipio }));
+  const [x, y] = pairs(DS.data, a, b), r = S.pearson(x, y);
+  $('dispR').textContent = r == null ? '' : `r de Pearson = ${r.toFixed(2)} (n = ${x.length})`;
+  chart('scatterChart', { type: 'scatter', data: { datasets: [{ data: pts, backgroundColor: 'rgba(201,162,39,.75)', pointRadius: 4, pointHoverRadius: 6 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw.m}: ${fmt(a, c.raw.x)} · ${fmt(b, c.raw.y)}` } } },
+      scales: { x: ejes({ title: { display: true, text: IND[a].corto, color: TXT } }), y: ejes({ title: { display: true, text: IND[b].corto, color: TXT } }) } } });
+}
+
+function renderDepto() {
+  fetchText(CONFIG.archivoDepto).then(t => {
+    const p = parseCSV(t), ha = p.headers.find(h => ['anio', 'ano', 'year', 'periodo'].includes(slug(h))), hv = p.headers.find(h => HEADER_ALIAS.valor_agregado.includes(slug(h)));
+    if (!ha || !hv) return;
+    const rows = p.rows.map(r => [r[ha], parseNum(r[hv])]).filter(r => r[1] != null); if (rows.length < 2) return;
+    $('deptoCard').classList.remove('hidden');
+    chart('deptoChart', { type: 'line', data: { labels: rows.map(r => r[0]), datasets: [{ data: rows.map(r => r[1]), borderColor: '#c9a227', backgroundColor: 'rgba(201,162,39,.12)', fill: true, tension: .25, pointRadius: 3 }] },
+      options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: ejes(), y: ejes({ title: { display: true, text: IND.valor_agregado.unit, color: TXT, font: { size: 10 } } }) } } });
+  }).catch(() => {});
+}
+
+/* ---------- Mapa coroplético ---------- */
+async function cargarGeo() {
+  if (GEO || geoEstado === 'cargando') return; geoEstado = 'cargando';
+  const leer = async url => JSON.parse(await fetchText(url));
+  let g = null, origen = '';
+  try { g = await leer(CONFIG.archivoGeo); origen = 'local'; } catch (e) {
+    $('mapEstado').textContent = 'Descargando límites municipales de respaldo (archivo nacional, puede tardar)…';
+    try { g = await leer(CONFIG.geoRemoto); origen = 'remoto'; } catch (e2) { g = null; }
+  }
+  if (!g || !g.features) { geoEstado = 'error'; $('mapEstado').innerHTML = 'No se pudo cargar la geometría. Sube el GeoJSON de municipios de Nariño como <code>data/narino.geojson</code>.'; return; }
+  const codes = new Set(BASE.map(b => b[0])), byName = Object.fromEntries(BASE.map(b => [norm(b[1]), b[0]])); Object.assign(byName, ALIAS);
+  const peq = g.features.length <= 70;
+  const feats = [];
+  g.features.forEach(f => {
+    let c = featCode(f.properties || {});
+    if ((!c || !codes.has(c)) && peq) c = byName[norm(featName(f.properties || {}))];
+    if (c && codes.has(c)) { f.properties.__code = c; feats.push(f); }
+  });
+  if (!feats.length) { geoEstado = 'error'; $('mapEstado').innerHTML = 'El GeoJSON no trae códigos DIVIPOLA reconocibles (se esperan campos como <code>MPIO_CDPMP</code> o <code>DPTO_CCDGO</code> + <code>MPIO_CCDGO</code>).'; return; }
+  GEO = { type: 'FeatureCollection', features: feats }; geoEstado = 'ok';
+  $('mapEstado').textContent = `${feats.length} de 64 municipios dibujados` + (origen === 'remoto' ? ' · geometría de respaldo; para cargar más rápido sube data/narino.geojson' : '');
+}
+async function initMapa() {
+  if (typeof L === 'undefined') { $('mapEstado').textContent = 'No se pudo cargar la librería de mapas.'; return; }
+  if (!map) {
+    map = L.map('mapa', { zoomSnap: .25, attributionControl: true }).setView([1.6, -77.8], 8);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 12, minZoom: 6 }).addTo(map);
+    await cargarGeo(); pintarMapa();
+    if (geoLayer) map.fitBounds(geoLayer.getBounds(), { padding: [10, 10] });
+  }
+  setTimeout(() => map.invalidateSize(), 50);
+}
+function cortes(vals) { return [.2, .4, .6, .8].map(p => S.quantile(vals, p)); }
+function clase(v, cs) { let i = 0; while (i < cs.length && v > cs[i]) i++; return i; }
+function pintarMapa() {
+  const k = $('mapVar').value;
+  document.querySelectorAll('[data-mapvar]').forEach(b => { const on = b.dataset.mapvar === k; b.classList.toggle('bg-gold', on); b.classList.toggle('text-ink', on); b.classList.toggle('font-semibold', on); b.classList.toggle('opacity-40', !DS.keys.includes(b.dataset.mapvar)); });
+  renderMapRanking(k);
+  if (!map || !GEO) return;
+  const byCode = Object.fromEntries(DS.data.map(d => [d.codigo, d])), vals = k ? S.vals(DS.data, k) : [], cs = vals.length ? cortes(vals) : [];
+  if (geoLayer) geoLayer.remove();
+  geoLayer = L.geoJSON(GEO, {
+    style: f => { const v = k ? byCode[f.properties.__code]?.v[k] : null; return v == null ? { fillColor: '#1c1c1f', fillOpacity: .9, color: '#52525b', weight: .8, dashArray: '3' } : { fillColor: RAMPA[clase(v, cs)], fillOpacity: .92, color: '#0c0c0e', weight: .8 }; },
+    onEachFeature: (f, layer) => {
+      const d = byCode[f.properties.__code];
+      layer.bindTooltip(`<strong>${d.municipio}</strong><br>${k ? esc(IND[k].corto) + ': ' + fmtU(k, d.v[k]) : 'Sin datos'}`, { sticky: true, className: 'tip' });
+      layer.on({ mouseover: () => layer.setStyle({ weight: 2.2, color: '#ffffff' }), mouseout: () => geoLayer.resetStyle(layer), click: () => ficha(d) });
+    }
+  }).addTo(map);
+  const lg = $('mapLeyenda');
+  if (!vals.length) { lg.innerHTML = '<span class="text-soft">Sin datos para colorear.</span>'; return; }
+  const lim = [Math.min(...vals), ...cs, Math.max(...vals)];
+  lg.innerHTML = `<p class="text-gray-300 mb-2">${esc(IND[k].label)}${IND[k].unit ? ' · ' + esc(IND[k].unit) : ''}</p>` + RAMPA.map((c, i) => `<div class="flex items-center gap-2"><span class="w-4 h-3 rounded-sm inline-block" style="background:${c}"></span>${fmt(k, lim[i])} – ${fmt(k, lim[i + 1])}</div>`).join('') + '<div class="flex items-center gap-2 mt-1"><span class="w-4 h-3 rounded-sm inline-block border border-dashed border-zinc-500" style="background:#1c1c1f"></span>Sin dato</div><p class="text-soft mt-2">Clases por quintiles</p>';
+}
+function renderMapRanking(k) {
+  const r = k ? ranking(DS.data, k) : [];
+  $('mapRanking').innerHTML = r.length ? r.map((d, i) => `<button class="w-full flex justify-between gap-3 px-3 py-1.5 text-left hover:bg-ink rounded" data-code="${d.codigo}"><span><span class="text-soft inline-block w-6">${i + 1}</span>${d.municipio}</span><span class="tabular-nums text-gold">${fmt(k, d.v[k])}</span></button>`).join('') : '<p class="text-soft px-3 py-6 text-center">Sin datos cargados.</p>';
+  $('mapRanking').querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => { const d = DS.data.find(x => x.codigo === b.dataset.code); ficha(d); if (geoLayer) geoLayer.eachLayer(l => { if (l.feature.properties.__code === d.codigo) map.fitBounds(l.getBounds(), { maxZoom: 10 }); }); }));
+}
+function ficha(d) {
+  const ks = DS.keys.filter(k => d.v[k] != null);
+  $('mapFicha').innerHTML = `<p class="text-white font-semibold">${d.municipio}</p><p class="text-[11px] text-soft mb-3">Código DANE ${d.codigo}</p>` + (ks.length ? ks.map(k => { const r = ranking(DS.data, k); return `<div class="flex justify-between gap-3 py-1 border-t border-line"><span class="text-soft">${esc(IND[k].corto)}</span><span class="tabular-nums text-right">${fmtU(k, d.v[k])}<span class="block text-[10px] text-soft">puesto ${r.indexOf(d) + 1} de ${r.length}</span></span></div>`; }).join('') : '<p class="text-soft">Sin cifras cargadas.</p>');
+}
+
+/* ---------- Econometría ---------- */
+function renderCorr() {
+  const ks = DS.keys, t = $('corrTable');
+  if (ks.length < 2) { t.innerHTML = '<tbody><tr><td class="py-8 text-center text-soft">Se necesitan al menos dos indicadores con datos.</td></tr></tbody>'; return; }
+  const cel = r => { if (r == null) return '<td class="px-2 py-2 text-center text-soft">–</td>'; const a = Math.min(1, Math.abs(r)); const bg = r >= 0 ? `rgba(201,162,39,${a * .7})` : `rgba(96,165,250,${a * .7})`; return `<td class="px-2 py-2 text-center tabular-nums" style="background:${bg};color:${a > .55 ? '#0c0c0e' : '#e4e4e7'}">${r.toFixed(2)}</td>`; };
+  t.innerHTML = '<thead><tr><th></th>' + ks.map(k => `<th class="px-2 py-2 text-soft font-normal text-[10px] align-bottom">${esc(IND[k].corto)}</th>`).join('') + '</tr></thead><tbody>' +
+    ks.map(a => `<tr><th class="text-left pr-3 py-2 text-soft font-normal whitespace-nowrap">${esc(IND[a].corto)}</th>` + ks.map(b => cel(a === b ? 1 : S.pearson(...pairs(DS.data, a, b)))).join('') + '</tr>').join('') + '</tbody>';
+}
+function renderOLS() {
+  const yk = $('olsY').value, el = $('olsResults');
+  const cand = ['ipm', 'valor_agregado', 'inversion', 'poblacion', ...DS.keys.filter(k => IND[k].extra)].filter(k => DS.keys.includes(k) && k !== yk);
+  const logK = k => ['valor_agregado', 'inversion', 'poblacion'].includes(k);
+  const rows = DS.data.filter(d => d.v[yk] != null && cand.every(k => d.v[k] != null && (!logK(k) || d.v[k] > 0)));
+  const nombre = k => (logK(k) ? 'log ' : '') + IND[k].corto;
+  $('olsEq').textContent = yk && cand.length ? `${IND[yk].corto} = β₀ + ` + cand.map((k, i) => `β${'₁₂₃₄₅₆₇₈₉'[i] || i + 1} ${nombre(k)}`).join(' + ') + ' + ε' : '';
+  const m = yk && cand.length ? ols(rows.map(d => d.v[yk]), rows.map(d => cand.map(k => logK(k) ? Math.log(d.v[k]) : d.v[k]))) : null;
+  if (!m) { el.innerHTML = '<p class="text-soft font-sans text-xs">No hay observaciones suficientes para estimar el modelo.</p>'; $('olsNota').textContent = ''; return; }
+  const f = v => v == null ? '–' : (Math.abs(v) >= 1000 || (Math.abs(v) < .001 && v !== 0) ? v.toExponential(2) : v.toFixed(3));
+  const sig = t => t == null ? '' : Math.abs(t) >= 2.66 ? '***' : Math.abs(t) >= 2 ? '**' : Math.abs(t) >= 1.67 ? '*' : '';
+  el.innerHTML = '<div class="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 gap-y-1 text-xs"><span class="text-soft">Variable</span><span class="text-soft text-right">Coef.</span><span class="text-soft text-right">E.E.</span><span class="text-soft text-right">t</span>' +
+    ['Constante', ...cand.map(nombre)].map((n, i) => `<span>${esc(n)}</span><span class="text-right text-gold">${f(m.beta[i])}${sig(m.t[i])}</span><span class="text-right">${f(m.se[i])}</span><span class="text-right">${f(m.t[i])}</span>`).join('') +
+    `</div><div class="border-t border-line mt-3 pt-3 text-xs flex flex-wrap gap-x-6 gap-y-1"><span>n = ${m.n}</span><span>R² = ${m.r2.toFixed(3)}</span><span>R² ajustado = ${m.r2adj.toFixed(3)}</span></div>`;
+  $('olsNota').textContent = 'Corte transversal de municipios con todas las variables disponibles. *** |t| ≥ 2,66 · ** |t| ≥ 2 · * |t| ≥ 1,67 (aproximado). Los coeficientes describen asociación, no causalidad.';
+}
+
+/* ---------- Proyección ---------- */
+function renderProyeccion() {
+  const sel = $('proyEnt');
+  sel.innerHTML = '<option value="">Departamento (suma de municipios)</option>' + DS.data.map(d => `<option value="${d.codigo}">${d.municipio}</option>`).join('');
+  ['proyEnt', 'gVA', 'gInv', 'rIPM'].forEach(i => $(i).addEventListener('input', simular)); simular();
+}
+function simular() {
+  const g1 = +$('gVA').value, g2 = +$('gInv').value, rp = +$('rIPM').value, c = $('proyEnt').value;
+  $('gVAv').textContent = g1.toFixed(1) + ' %'; $('gInvv').textContent = g2.toFixed(1) + ' %'; $('rIPMv').textContent = rp.toFixed(1) + ' pp';
+  const d = c ? DS.data.find(x => x.codigo === c) : null;
+  const base = k => d ? d.v[k] : (S.vals(DS.data, k).length ? (k === 'ipm' ? S.mean(S.vals(DS.data, k)) : S.sum(S.vals(DS.data, k))) : null);
+  const va0 = base('valor_agregado'), in0 = base('inversion'), ip0 = base('ipm');
+  const años = []; for (let a = CONFIG.anioBase; a <= 2030; a++) años.push(a);
+  const serie = (v0, f) => v0 == null ? [] : años.map((_, i) => f(v0, i));
+  const sVA = serie(va0, (v, i) => v * (1 + g1 / 100) ** i), sIn = serie(in0, (v, i) => v * (1 + g2 / 100) ** i), sIP = serie(ip0, (v, i) => Math.max(0, v - rp * i));
+  $('va2030').textContent = sVA.length ? fmt('valor_agregado', sVA.at(-1)) : '—';
+  $('inv2030').textContent = sIn.length ? fmt('inversion', sIn.at(-1)) : '—';
+  $('ipm2030').textContent = sIP.length ? fmt('ipm', sIP.at(-1)) + ' %' : '—';
+  const idx = s => s.length ? s.map(v => s[0] ? 100 * v / s[0] : null) : [];
+  chart('simChart', { type: 'line', data: { labels: años, datasets: [
+    { label: 'Valor agregado (índice)', data: idx(sVA), borderColor: '#c9a227', backgroundColor: '#c9a227', tension: .2, pointRadius: 3 },
+    { label: 'Inversión (índice)', data: idx(sIn), borderColor: '#60a5fa', backgroundColor: '#60a5fa', borderDash: [6, 3], tension: .2, pointRadius: 3, pointStyle: 'rect' },
+    { label: 'Pobreza IPM (índice)', data: idx(sIP), borderColor: '#34d399', backgroundColor: '#34d399', borderDash: [2, 3], tension: .2, pointRadius: 3, pointStyle: 'triangle' }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d4d4d8', usePointStyle: true, font: { size: 11 } } } }, scales: { x: ejes(), y: ejes({ title: { display: true, text: `Índice (${CONFIG.anioBase} = 100)`, color: TXT, font: { size: 10 } } }) } } });
+}
+
+/* ---------- Chat ---------- */
+function burbuja(html, yo) {
+  const w = document.createElement('div'); w.className = 'flex ' + (yo ? 'justify-end' : 'justify-start');
+  w.innerHTML = `<div class="max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${yo ? 'bg-gold text-ink' : 'bg-panel border border-line text-gray-200'}">${html}</div>`;
+  $('chatMessages').appendChild(w); $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+}
+function preguntar(q) {
+  q = q.trim(); if (!q) return; burbuja(esc(q), true);
+  const r = answer(DS, INDEX, q);
+  let h = `<p class="text-[10px] uppercase tracking-wider text-gold mb-1">Respuesta rápida</p><p>${esc(r.rapida)}</p>`;
+  if (r.precisa) h += `<details class="mt-3"><summary class="cursor-pointer text-[10px] uppercase tracking-wider text-gold">Respuesta más completa</summary><p class="mt-2 text-soft whitespace-pre-line text-[13px]">${esc(r.precisa)}</p></details>`;
+  if (r.fuentes.length) h += `<p class="mt-3 pt-2 border-t border-line text-[11px] text-soft">Fuentes: ${r.fuentes.map(esc).join(' | ')}</p>`;
+  burbuja(h, false);
+}
+function setupChat() {
+  burbuja('Hola. Soy el asistente del Observatorio. Respondo con los datos cargados en la página: pregúntame por un municipio, un indicador o por el contenido del sitio.', false);
+  const enviar = () => { preguntar($('chatInput').value); $('chatInput').value = ''; };
+  $('chatSend').addEventListener('click', enviar);
+  $('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') enviar(); });
+  document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => preguntar(b.dataset.q)));
+}
+
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', init);
+
+  </script>
+</body>
+</html>
